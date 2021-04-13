@@ -9,7 +9,7 @@ import * as WebSocket from 'ws'
 import { ILogger } from './interfaces/ILogger'
 import { IDataProcessor } from './interfaces/IDataProcessor'
 import { IClientManager } from './interfaces/IClientManager'
-import { ClientMsg, ClientAction, ClientMethods } from './RCS.Config'
+import { ClientMsg, ClientAction, ClientMethods, ClientObject } from './RCS.Config'
 import { ClientActions } from './ClientActions'
 import { ICertManager } from './interfaces/ICertManager'
 import { SignatureHelper } from './utils/SignatureHelper'
@@ -19,6 +19,9 @@ import { RPSError } from './utils/RPSError'
 import { WSManProcessor } from './WSManProcessor'
 import { ClientResponseMsg } from './utils/ClientResponseMsg'
 import { IValidator } from './interfaces/IValidator'
+import { SecureConfig } from './SecureConfig'
+
+var superMessage : ClientMsg
 
 export class DataProcessor implements IDataProcessor {
   private readonly clientActions: ClientActions
@@ -57,6 +60,19 @@ export class DataProcessor implements IDataProcessor {
 
         await this.validator.validateActivationMsg(clientMsg, clientId) // Validate the activation message payload
 
+        // Check AMT version to see if this connection should be secured
+        let secureConfig: SecureConfig = new SecureConfig()
+        let amtVersion = clientMsg.payload.ver.split(".")
+        if (parseInt(amtVersion[0]) >= 14) {
+          this.logger.error("client supports host based configuration")
+          let msg: ClientMsg = secureConfig.getSBHCRequestMsg()
+
+          let clientObj = this.clientManager.getClientObject(clientId)
+          clientObj.prevObj = clientObj
+          superMessage = clientMsg
+          return msg
+        }
+/*
         // Makes the first wsman call
         const clientObj = this.clientManager.getClientObject(clientId)
         if (clientObj.action !== ClientAction.CIRACONFIG && !clientMsg.payload.digestRealm) {
@@ -64,6 +80,7 @@ export class DataProcessor implements IDataProcessor {
         } else {
           return await this.clientActions.buildResponseMessage(clientMsg, clientId)
         }
+*/
       } else if (clientMsg.method === ClientMethods.DEACTIVATION) {
         this.logger.debug(`ProcessData: Parsed DEACTIVATION Message received from device ${clientMsg.payload.uuid}: ${JSON.stringify(clientMsg, null, '\t')}`)
 
@@ -90,6 +107,21 @@ export class DataProcessor implements IDataProcessor {
           }
         }
         return await this.clientActions.buildResponseMessage(clientMsg, clientId)
+      } else if (clientMsg.method === "secure_config_response") {
+        this.logger.error("got a secure_config_response from RPC")
+        this.logger.error(JSON.stringify(clientMsg))
+
+        // Makes the first wsman call
+        let clientObj = this.clientManager.getClientObject(clientId)
+        clientMsg = superMessage
+        //this.clientManager.setClientObject(clientObj.prevObj)
+        //clientObj = this.clientManager.getClientObject(clientId)
+        if (clientObj.action !== ClientAction.CIRACONFIG && !clientMsg.payload.digestRealm) {
+          await this.amtwsman.batchEnum(clientId, '*AMT_GeneralSettings')
+        } else {
+          return await this.clientActions.buildResponseMessage(clientMsg, clientId)
+        }
+
       } else {
         const uuid = clientMsg.payload.uuid ? clientMsg.payload.uuid : this.clientManager.getClientObject(clientId).ClientData.payload.uuid
         throw new RPSError(`Device ${uuid} Not a supported method received from AMT device`)

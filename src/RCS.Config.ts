@@ -95,6 +95,8 @@ export interface ClientObject {
   readyState?: number
   amtPassword?: string
   ciraconfig?: CIRAConfigFlow
+  prevObj?: ClientObject
+  prevMsg?: ClientMsg
 }
 
 export interface CIRAConfigFlow {

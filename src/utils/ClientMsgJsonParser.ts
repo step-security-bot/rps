@@ -37,7 +37,7 @@ export class ClientMsgJsonParser implements IClientMessageParser {
   convertClientMsg (message: ClientMsg): ClientMsg {
     let payload: any = this.nodeForge.decode64(message.payload)
     if (payload) {
-      if (message.method !== ClientMethods.RESPONSE) {
+      if ( (message.method !== ClientMethods.RESPONSE) && (message.method != "secure_config_response") ) {
         payload = this.parsePayload(payload)
       }
       message.payload = payload
