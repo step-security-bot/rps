@@ -4,6 +4,8 @@
  **********************************************************************/
 
 import * as forge from 'node-forge'
+/* eslint-disable @typescript-eslint/no-var-requires */
+const nodeForge = require('node-forge')
 
 export class NodeForge {
   public readonly pkiOidsCertBag: string = '1.2.840.113549.1.12.10.1.3'
@@ -14,7 +16,7 @@ export class NodeForge {
   }
 
   asn1FromDer (input: string, strict?: boolean): forge.asn1.Asn1 {
-    return forge.asn1.fromDer(input, strict)
+    return nodeForge.asn1.fromDer(input, { strict, parseAllBytes: false })
   }
 
   getBags (pkcs12Pfx: forge.pkcs12.Pkcs12Pfx, filter: forge.pkcs12.BagsFilter): {
