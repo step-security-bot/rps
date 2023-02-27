@@ -22,6 +22,8 @@ import { type IDB } from './interfaces/database/IDb'
 import { WSEnterpriseAssistantListener } from './WSEnterpriseAssistantListener'
 import { existsSync, lstatSync, readdirSync } from 'fs'
 import path = require('path')
+import { SecretManagerCreatorFactory } from './factories/SecretManagerCreatorFactory'
+
 const log = new Logger('Index')
 
 // To merge ENV variables. consider after lowercasing ENV since our config keys are lowercase
@@ -76,9 +78,8 @@ export const loadCustomMiddleware = async function (): Promise<express.RequestHa
 
 loadCustomMiddleware().then(customMiddleware => {
   app.use('/api/v1', async (req: express.Request, res: express.Response, next) => {
-    if (configurator.secretsManager) {
-      (req as any).secretsManager = configurator.secretsManager
-    }
+    const smcf = new SecretManagerCreatorFactory()
+    req.secretsManager = await smcf.getSecretManager(new Logger('SecretManager'))
     req.db = await dbFactory.getDb()
     next()
   }, customMiddleware, routes)

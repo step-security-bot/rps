@@ -8,16 +8,9 @@ import { type ISecretManagerService } from '../interfaces/ISecretManagerService'
 import { Environment } from '../utils/Environment'
 
 export class SecretManagerCreatorFactory {
-  private static instance: ISecretManagerService
-
   async getSecretManager (logger: ILogger): Promise<ISecretManagerService> {
-    if (SecretManagerCreatorFactory.instance == null) {
-      const { default: Provider }: { default: new (logger: ILogger) => ISecretManagerService } =
-        await import(`../secrets/${Environment.Config.secretsProvider}`)
-
-      SecretManagerCreatorFactory.instance = new Provider(logger)
-    }
-
-    return SecretManagerCreatorFactory.instance
+    const { default: Provider }: { default: new (logger: ILogger) => ISecretManagerService } =
+      await import(`../secrets/${Environment.Config.secretsProvider}`)
+    return new Provider(logger)
   }
 }

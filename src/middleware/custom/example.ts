@@ -8,10 +8,10 @@ exports = module.exports = function (req, res, next) {
   // Example use-cases would be handling custom authentication tokens, adding trace IDs, debugging requests, etc...
 
   // You can access the Database interface by using req.db
-  // You can access the secret provide instance by using req.secrets
+  // You can access the secret provide instance by using req.secretsManager
 
   // For example setting properties on the secret provider and database implementations:
-  // req.secrets.myToken = req.headers['x-header-token']
+  // req.secretsManager.myToken = req.headers['x-header-token']
   // req.db.customProperty = req.headers['x-db-info']
 
   // For setting the tenantId use req.tenantId
